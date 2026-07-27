@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, maximum-scale=1.5">
+  <title>班级点名 · 幸运大转盘</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(145deg, #1a1e2b 0%, #2a3140 100%);
+      font-family: 'Segoe UI', 'Fredoka', 'PingFang SC', 'Microsoft YaHei', 'WenQuanYi Micro Hei', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      margin: 0;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* 活力背景装饰 */
+    body::before {
+      content: "";
+      position: fixed;
+      top: -20%;
+      left: -10%;
+      width: 120%;
+      height: 120%;
+      background: radial-gradient(circle at 30% 40%, rgba(255, 183, 77, 0.15) 0%, transparent 40%),
+                  radial-gradient(circle at 70% 60%, rgba(255, 107, 157, 0.2) 0%, transparent 45%),
+                  radial-gradient(circle at 20% 80%, rgba(107, 203, 255, 0.2) 0%, transparent 40%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 650px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-radius: 60px 60px 50px 50px;
+      padding: 30px 25px 35px;
+      box-shadow: 0 30px 50px rgba(0, 0, 0, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #FFE9B6;
+      text-shadow: 0 4px 12px rgba(255, 140, 0, 0.7), 0 0 8px rgba(255, 215, 0, 0.6);
+      margin-bottom: 20px;
+      text-align: center;
+      word-break: break-word;
+    }
+
+    /* 转盘画布区域 */
+    .wheel-wrapper {
+      position: relative;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 5px 0 20px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      max-width: 450px;
+      height: auto;
+      aspect-ratio: 1/1;
+      border-radius: 50%;
+      box-shadow: 0 20px 35px rgba(0, 0, 0, 0.7), 0 0 0 6px rgba(255, 255, 255, 0.25), 0 0 30px rgba(255, 200, 100, 0.5);
+      transition: filter 0.2s ease;
+      background: #222;
+    }
+
+    /* 指针装饰 */
+    .pointer {
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 3.2rem;
+      filter: drop-shadow(0 10px 8px rgba(0,0,0,0.5));
+      z-index: 20;
+      color: #FFD966;
+      text-shadow: 0 0 10px black;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .control-panel {
+      width: 100%;
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .name-input-area {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-weight: 600;
+      color: #f0e6d2;
+      font-size: 1rem;
+      letter-spacing: 1px;
+      margin-left: 5px;
+      text-shadow: 0 2px 4px black;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 14px 18px;
+      border-radius: 30px;
+      border: none;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 500;
+      resize: vertical;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      outline: none;
+      transition: all 0.25s;
+      line-height: 1.5;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    }
+
+    textarea::placeholder {
+      color: rgba(255, 255, 255, 0.6);
+      font-weight: 400;
+    }
+
+    textarea:focus {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: #ffb347;
+      box-shadow: 0 0 20px rgba(255, 160, 0, 0.6);
+    }
+
+    .button-group {
+      display: flex;
+      width: 100%;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 5px;
+    }
+
+    .btn {
+      padding: 14px 30px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      border: none;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: white;
+      transition: all 0.25s ease;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      flex: 1 1 auto;
+      min-width: 120px;
+    }
+
+    .btn:hover:not(:disabled) {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 25px rgba(0,0,0,0.5);
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #ff7b3d, #ff4e6b);
+      border: 1px solid #ffb08c;
+      color: white;
+      text-shadow: 0 2px 4px black;
+    }
+
+    .btn-stop {
+      background: linear-gradient(135deg, #3b5bff, #b44dff);
+      border: 1px solid #bca0ff;
+    }
+
+    .btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 5px 12px rgba(0,0,0,0.5);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      filter: grayscale(30%);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 0 5px 12px rgba(0,0,0,0.3);
+    }
+
+    .status-text {
+      font-size: 0.95rem;
+      color: #ffe6b3;
+      font-weight: 500;
+      min-height: 24px;
+      letter-spacing: 0.5px;
+      text-align: center;
+    }
+
+    /* 自定义弹出框（模态） */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      visibility: hidden;
+      opacity: 0;
+      transition: visibility 0.2s, opacity 0.25s ease;
+    }
+
+    .modal.active {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .modal-dialog {
+      background: #ffffff;
+      border-radius: 50px;
+      padding: 30px 35px;
+      max-width: 350px;
+      width: 80%;
+      text-align: center;
+      box-shadow: 0 40px 60px rgba(0,0,0,0.7), 0 0 0 4px rgba(255,215,0,0.7);
+      background: linear-gradient(145deg, #fff5e6, #ffe6d5);
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal.active .modal-dialog {
+      transform: scale(1);
+    }
+
+    .modal h2 {
+      font-size: 2rem;
+      color: #c44536;
+      margin-bottom: 15px;
+      font-weight: 800;
+    }
+
+    .modal .winner-name {
+      font-size: 3.2rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ff5722, #ff9800);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 10px 0 25px;
+      word-break: break-word;
+      text-shadow: 0 2px 10px rgba(255, 140, 0, 0.5);
+    }
+
+    .modal button {
+      background: #ff7b2c;
+      border: none;
+      color: white;
+      padding: 12px 30px;
+      border-radius: 40px;
+      font-weight: bold;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(255, 100, 0, 0.5);
+      transition: 0.2s;
+      border: 1px solid #ffb26e;
+    }
+
+    .modal button:hover {
+      background: #ff5e00;
+      transform: scale(1.03);
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        padding: 20px 15px 25px;
+      }
+      .btn {
+        padding: 12px 18px;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>✨ 幸运大转盘 ✨</h1>
+    
+    <div class="wheel-wrapper">
+      <!-- 转盘固定指针指示器 -->
+      <div class="pointer">▼</div>
+      <canvas id="wheelCanvas" width="500" height="500" aria-label="幸运大转盘，包含学生姓名"></canvas>
+    </div>
+
+    <div class="control-panel">
+      <div class="name-input-area">
+        <label for="nameListInput">📋 名单 (逗号分隔)</label>
+        <textarea id="nameListInput" placeholder="例如：张三,李四,王五,赵六,陈七" rows="2">张三,李四,王五,赵六,陈七,刘八,周九,吴十,郑十一,钱十二</textarea>
+      </div>
+      
+      <div class="button-group">
+        <button id="startBtn" class="btn btn-start">🎲 开始旋转</button>
+        <button id="stopBtn" class="btn btn-stop" disabled>⏹️ 停止</button>
+      </div>
+      <div id="statusMessage" class="status-text">💡 点击“开始”转动转盘</div>
+    </div>
+  </div>
+
+  <!-- 自定义弹出恭喜框 -->
+  <div id="congratsModal" class="modal">
+    <div class="modal-dialog">
+      <h2>🎉 恭喜 🎉</h2>
+      <div id="modalWinnerName" class="winner-name">---</div>
+      <button id="closeModalBtn">确 定</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // ----- 核心变量 -----
+      const canvas = document.getElementById('wheelCanvas');
+      const ctx = canvas.getContext('2d');
+      
+      const nameInput = document.getElementById('nameListInput');
+      const startBtn = document.getElementById('startBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const statusDiv = document.getElementById('statusMessage');
+      
+      // 模态框元素
+      const modal = document.getElementById('congratsModal');
+      const modalWinnerName = document.getElementById('modalWinnerName');
+      const closeModalBtn = document.getElementById('closeModalBtn');
+      
+      // 转盘数据
+      let names = [];                 // 当前名字数组
+      let segmentCount = 0;
+      
+      // 动画相关状态
+      let animationId = null;
+      let currentAngle = 0;          // 当前旋转弧度
+      let spinning = false;         // 是否正在转动中 (旋转动画运行)
+      
+      // 速度控制 (用于逐渐减速)
+      let angularSpeed = 0;         // 当前角速度 (弧度每帧)
+      const BASE_SPEED = 0.35;      // 快速旋转时的基础速度 (约20度每帧)
+      const DECELERATION = 0.985;   // 减速系数，每帧乘以此值
+      const STOP_THRESHOLD = 0.002; // 低于此速度视为停止
+      
+      // 标志位：是否正在执行“减速到停止”的过程
+      let isStopping = false;
+      
+      // ----- 工具函数：解析名字列表 -----
+      function parseNames(rawText) {
+        if (!rawText || rawText.trim() === '') return [];
+        // 使用逗号，中文逗号，顿号，空格等分隔，过滤空字符串
+        const splitRegex = /[，,、\s]+/;
+        const rawItems = rawText.split(splitRegex).filter(item => item.trim() !== '');
+        // 去重并保留原始顺序
+        const uniqueNames = [...new Set(rawItems.map(n => n.trim()))];
+        return uniqueNames;
+      }
+      
+      // 更新名字数组并从输入框同步
+      function updateNamesFromInput() {
+        const inputText = nameInput.value;
+        const newNames = parseNames(inputText);
+        if (newNames.length === 0) {
+          // 如果解析后为空，设置默认占位名字防止转盘空白
+          names = ['🎈 请添加姓名'];
+          segmentCount = 1;
+          statusDiv.textContent = '⚠️ 名单为空，请填入姓名（逗号分隔）';
+          return false;
+        } else {
+          names = newNames;
+          segmentCount = names.length;
+          return true;
+        }
+      }
+      
+      // ----- 转盘绘制函数 (根据currentAngle) -----
+      function drawWheel() {
+        if (!canvas || !ctx) return;
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        
+        if (segmentCount === 0 || names.length === 0) {
+          // 无数据时绘制灰色占位
+          ctx.beginPath();
+          ctx.arc(w/2, h/2, w/2 * 0.85, 0, Math.PI * 2);
+          ctx.fillStyle = '#4a4e5c';
+          ctx.fill();
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 6;
+          ctx.stroke();
+          ctx.fillStyle = 'white';
+          ctx.font = 'bold 24px "PingFang SC", "Microsoft YaHei"';
+          ctx.textAlign = 'center';
+          ctx.fillText('无名单', w/2, h/2);
+          return;
+        }
+        
+        const centerX = w / 2;
+        const centerY = h / 2;
+        const radius = w / 2 * 0.85; // 留出边距
+        
+        // 活力丰富的颜色池 (区分明显)
+        const colorPalette = [
+          '#FF6B6B', '#4ECDC4', '#FF9F1C', '#6C5CE7', '#A8E6CF', 
+          '#FF8A5C', '#45B7D1', '#F7DC6F', '#E056A0', '#2ECC71',
+          '#FD7272', '#55E6C1', '#F8B239', '#5F27CD', '#48DBFB',
+          '#FF6348', '#3AE374', '#FFC048', '#7158E2', '#32FF7E'
+        ];
+        
+        const angleStep = (Math.PI * 2) / segmentCount;
+        
+        // 绘制扇形和文字
+        for (let i = 0; i < segmentCount; i++) {
+          const startAngle = currentAngle + i * angleStep;
+          const endAngle = startAngle + angleStep;
+          
+          // 绘制扇形
+          ctx.beginPath();
+          ctx.moveTo(centerX, centerY);
+          ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+          ctx.closePath();
+          
+          // 填充颜色
+          ctx.fillStyle = colorPalette[i % colorPalette.length];
+          ctx.fill();
+          
+          // 绘制分割白线
+          ctx.strokeStyle = '#FFFFFF';
+          ctx.lineWidth = 3.5;
+          ctx.stroke();
+          
+          // 绘制名字文字 (径向)
+          ctx.save();
+          ctx.translate(centerX, centerY);
+          ctx.rotate(startAngle + angleStep / 2); // 文字居中于扇形中间角度
+          ctx.textAlign = "right";
+          ctx.fillStyle = '#1E1E2F';
+          ctx.font = 'bold 16px "PingFang SC", "Microsoft YaHei", "Fredoka"';
+          ctx.shadowColor = 'rgba(255,255,255,0.7)';
+          ctx.shadowBlur = 4;
+          
+          // 文字绘制在半径的70%位置附近
+          const textRadius = radius * 0.72;
+          let displayName = names[i];
+          if (displayName.length > 6) {
+            displayName = displayName.slice(0, 5) + '…';
+          }
+          ctx.fillText(displayName, textRadius, 6); 
+          ctx.restore();
+        }
+        
+        // 绘制中心装饰圆
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.12, 0, 2 * Math.PI);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        ctx.strokeStyle = '#FFB347';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius * 0.07, 0, 2 * Math.PI);
+        ctx.fillStyle = '#FFD93D';
+        ctx.fill();
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+      }
+      
+      // ----- 根据当前角度计算被指针指向的名字 (指针方向为上方 -PI/2) -----
+      function getSelectedNameByAngle(angle) {
+        if (segmentCount === 0 || names.length === 0) return null;
+        // 指针方向固定为 -PI/2 (正上方) 对应弧度 -90°
+        const pointerAngle = -Math.PI / 2; 
+        
+        // 将指针角度规范化到 [0, 2PI)
+        let normalizedPointer = ((pointerAngle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+        
+        // 当前转盘每个扇区的起始角度由 currentAngle 决定。
+        // 我们需要找出指针落在哪个扇区。
+        // 扇区i的范围: [currentAngle + i*step, currentAngle + (i+1)*step)
+        const step = (Math.PI * 2) / segmentCount;
+        
+        for (let i = 0; i < segmentCount; i++) {
+          let sectorStart = (angle + i * step) % (Math.PI * 2);
+          let sectorEnd = (angle + (i + 1) * step) % (Math.PI * 2);
+          
+          // 处理跨越0度的情况
+          if (sectorStart < sectorEnd) {
+            if (normalizedPointer >= sectorStart && normalizedPointer < sectorEnd) {
+              return names[i];
+            }
+          } else {
+            // 跨越0度区间
+            if (normalizedPointer >= sectorStart || normalizedPointer < sectorEnd) {
+              return names[i];
+            }
+          }
+        }
+        // 保底返回最后一个（极少情况浮点误差）
+        return names[segmentCount-1];
+      }
+      
+      // ----- 停止转动并显示结果 -----
+      function finishAndShowResult() {
+        if (!spinning && !isStopping) return;
+        
+        // 清除所有动画状态
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+          animationId = null;
+        }
+        spinning = false;
+        isStopping = false;
+        angularSpeed = 0;
+        
+        // 根据当前角度获取被选中名字
+        const winner = getSelectedNameByAngle(currentAngle);
+        if (winner) {
+          // 显示模态框
+          modalWinnerName.textContent = winner;
+          modal.classList.add('active');
+          statusDiv.textContent = `🏆 恭喜 "${winner}" 被选中！`;
+        } else {
+          statusDiv.textContent = '❓ 未找到名字，请检查名单';
+        }
+        
+        // 按钮状态切换
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        
+        // 重绘转盘确保显示最终位置
+        drawWheel();
+      }
+      
+      // ----- 动画循环 (旋转更新) -----
+      function spinAnimation() {
+        if (!spinning) {
+          // 安全兜底：如果spinning为false但动画还在跑，清理
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+            animationId = null;
+          }
+          return;
+        }
+        
+        // 更新角度：累加角速度
+        currentAngle = (currentAngle + angularSpeed) % (Math.PI * 2);
+        
+        // 如果处于减速状态 (isStopping = true)，持续降低速度
+        if (isStopping) {
+          angularSpeed *= DECELERATION;
+          
+          // 检查速度是否低于阈值，停止转动
+          if (Math.abs(angularSpeed) < STOP_THRESHOLD) {
+            angularSpeed = 0;
+            // 停止完成，展示结果
+            finishAndShowResult();
+            return;
+          }
+        }
+        
+        // 绘制当前帧
+        drawWheel();
+        
+        // 继续下一帧动画
+        animationId = requestAnimationFrame(spinAnimation);
+      }
+      
+      // ----- 开始旋转 (快速) -----
+      function startSpin() {
+        // 更新名字列表
+        const hasNames = updateNamesFromInput();
+        if (!hasNames || names.length === 0) {
+          alert('请先在输入框中填写至少一个名字（逗号分隔）');
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          return;
+        }
+        
+        // 如果已经有动画在运行，先取消再重新开始
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+          animationId = null;
+        }
+        
+        // 重置减速标志，设置高速转动
+        spinning = true;
+        isStopping = false;
+        angularSpeed = BASE_SPEED;   // 快速旋转
+        
+        // 更新按钮状态
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+        statusDiv.textContent = '🎡 转盘旋转中… 点击“停止”抽选！';
+        
+        // 开始动画循环
+        animationId = requestAnimationFrame(spinAnimation);
+      }
+      
+      // ----- 触发停止 (逐渐减速) -----
+      function stopSpin() {
+        if (!spinning) {
+          // 如果不在旋转状态，不做反应
+          return;
+        }
+        
+        // 如果已经在减速中，再次点击停止不做额外操作（防止多重减速）
+        if (isStopping) {
+          return;
+        }
+        
+        // 设置为减速模式
+        isStopping = true;
+        stopBtn.disabled = true;   // 停止按钮变灰，避免重复点击
+        statusDiv.textContent = '⏳ 减速中，即将揭晓…';
+        
+        // 动画循环会检测 isStopping 并自动减速
+        // 无需额外操作
+      }
+      
+      // ----- 重置/清理动画 (用于切换名字或手动重置) -----
+      function resetSpinState() {
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+          animationId = null;
+        }
+        spinning = false;
+        isStopping = false;
+        angularSpeed = 0;
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+      }
+      
+      // ----- 手动更新名字并重绘 (不清除旋转状态，但若正在旋转建议重置)-----
+      function refreshNamesAndDraw() {
+        // 如果正在旋转，出于安全先停止动画并重置状态（避免名字突变导致错误）
+        if (spinning || isStopping) {
+          resetSpinState();
+        }
+        updateNamesFromInput();
+        drawWheel();
+        statusDiv.textContent = '✅ 名单已更新，点击“开始”旋转';
+      }
+      
+      // ----- 事件绑定 -----
+      startBtn.addEventListener('click', startSpin);
+      
+      stopBtn.addEventListener('click', stopSpin);
+      
+      // 输入框失去焦点时自动更新转盘预览（但不干扰旋转状态？若旋转中建议不自动重置）
+      nameInput.addEventListener('blur', () => {
+        // 如果当前没有在旋转，安全更新名字和转盘绘制
+        if (!spinning && !isStopping) {
+          refreshNamesAndDraw();
+        } else {
+          // 旋转中提示用户不能直接修改，但可以保留；实际设计中为避免混乱，旋转中不改名单。
+          // 我们可以在blur时若旋转则提醒
+          statusDiv.textContent = '⛔ 转盘旋转中，请先停止再修改名单';
+          // 恢复输入框旧值？更好的做法是不允许修改，但这里简单恢复之前names?
+          // 决定：旋转中保持原名单，输入框改回原名字字符串(用names重建)
+          if (names.length > 0 && names[0] !== '🎈 请添加姓名') {
+            nameInput.value = names.join(',');
+          }
+        }
+      });
+      
+      // 也支持回车或点击其他地方，同时监听input变化？但为体验，保留blur为主。
+      // 额外：当用户修改后直接点开始，startSpin会调用updateNamesFromInput，所以没问题。
+      
+      // 模态关闭按钮
+      closeModalBtn.addEventListener('click', () => {
+        modal.classList.remove('active');
+      });
+      
+      // 点击模态背景关闭
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.classList.remove('active');
+        }
+      });
+      
+      // 键盘ESC关闭模态
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+          modal.classList.remove('active');
+        }
+      });
+      
+      // ----- 初始化加载 -----
+      function initialSetup() {
+        updateNamesFromInput();
+        // 随机初始角度，让转盘看起来生动
+        currentAngle = Math.random() * Math.PI * 2;
+        drawWheel();
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        statusDiv.textContent = '🎯 已加载名单，点击开始！';
+      }
+      
+      initialSetup();
+      
+      // 窗口失去焦点时不做特殊处理，动画继续。
+      // 清理动画(非必须，但好习惯)
+      window.addEventListener('beforeunload', () => {
+        if (animationId) cancelAnimationFrame(animationId);
+      });
+    })();
+  </script>
+</body>
+</html>

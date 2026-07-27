@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glassmorphism To-Do List</title>
+    <style>
+        :root {
+            --primary-color: #6a11cb;
+            --secondary-color: #2575fc;
+            --glass-bg: rgba(255, 255, 255, 0.15);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --text-color: #ffffff;
+            --input-bg: rgba(255, 255, 255, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 背景装饰球，增加层次感 */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            z-index: -1;
+            opacity: 0.6;
+        }
+        .blob-1 { top: -10%; left: -10%; width: 300px; height: 300px; background: #ff00cc; }
+        .blob-2 { bottom: -10%; right: -10%; width: 400px; height: 400px; background: #333399; }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            padding: 2rem;
+            margin: 20px;
+            
+            /* 毛玻璃核心样式 */
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            
+            color: var(--text-color);
+            transition: transform 0.3s ease;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+            background: var(--input-bg);
+            color: white;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        input[type="text"]:focus {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        button#add-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary-color);
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        button#add-btn:hover {
+            transform: scale(1.05);
+            background: white;
+        }
+
+        ul {
+            list-style: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* 滚动条美化 */
+        ul::-webkit-scrollbar {
+            width: 6px;
+        }
+        ul::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+        }
+
+        li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            animation: slideIn 0.3s ease forwards;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        li:hover {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        li.completed span {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .task-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255,255,255,0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        li.completed .checkbox {
+            background: #4ade80;
+            border-color: #4ade80;
+        }
+
+        li.completed .checkbox::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+        }
+
+        .delete-btn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 5px;
+            transition: color 0.2s;
+        }
+
+        .delete-btn:hover {
+            color: #ff6b6b;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="container">
+        <h1>My Tasks</h1>
+        
+        <div class="input-group">
+            <input type="text" id="todo-input" placeholder="添加一个新的任务...">
+            <button id="add-btn">添加</button>
+        </div>
+
+        <ul id="todo-list">
+            <!-- 任务将在这里动态生成 -->
+        </ul>
+        <div id="empty-msg" class="empty-state" style="display: none;">暂无任务，享受当下吧！☕</div>
+    </div>
+
+    <script>
+        // 获取DOM元素
+        const input = document.getElementById('todo-input');
+        const addBtn = document.getElementById('add-btn');
+        const todoList = document.getElementById('todo-list');
+        const emptyMsg = document.getElementById('empty-msg');
+
+        // 初始化：从LocalStorage加载数据
+        let todos = JSON.parse(localStorage.getItem('glassTodos')) || [];
+
+        // 渲染列表函数
+        function render() {
+            todoList.innerHTML = '';
+            
+            if (todos.length === 0) {
+                emptyMsg.style.display = 'block';
+            } else {
+                emptyMsg.style.display = 'none';
+                
+                todos.forEach((todo, index) => {
+                    const li = document.createElement('li');
+                    if (todo.completed) li.classList.add('completed');
+                    
+                    li.innerHTML = `
+                        <div class="task-content" onclick="toggleComplete(${index})">
+                            <div class="checkbox"></div>
+                            <span>${escapeHtml(todo.text)}</span>
+                        </div>
+                        <button class="delete-btn" onclick="deleteTodo(${index})">×</button>
+                    `;
+                    todoList.appendChild(li);
+                });
+            }
+            save();
+        }
+
+        // 保存数据到LocalStorage
+        function save() {
+            localStorage.setItem('glassTodos', JSON.stringify(todos));
+        }
+
+        // 添加任务
+        function addTodo() {
+            const text = input.value.trim();
+            if (text) {
+                todos.push({ text: text, completed: false });
+                input.value = '';
+                render();
+            }
+        }
+
+        // 切换完成状态
+        window.toggleComplete = function(index) {
+            todos[index].completed = !todos[index].completed;
+            render();
+        }
+
+        // 删除任务
+        window.deleteTodo = function(index) {
+            todos.splice(index, 1);
+            render();
+        }
+
+        // 防XSS攻击的简单转义
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // 事件监听
+        addBtn.addEventListener('click', addTodo);
+        
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTodo();
+            }
+        });
+
+        // 首次加载渲染
+        render();
+    </script>
+</body>
+</html>
